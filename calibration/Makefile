@@ -14,22 +14,9 @@ CXX           = gcc
 CFLAGS        = -g -std=c99 -Wall -Wextra $(DEFINES)
 CXXFLAGS      = -g -std=c++0x -Wall -Wextra -fexceptions $(DEFINES)
 INCPATH       = -I..\calibration -I. -I..\..\sources 
-LINKER      =        g++
+LINKER      =        gcc
 LFLAGS        =  
-IDC           = idc
-IDL           = midl
-ZIP           = zip -r -9
-DEF_FILE      = 
-RES_FILE      = 
-COPY_DIR      = xcopy /s /q /y /i
-DEL_FILE      = del
-DEL_DIR       = rmdir
-MOVE          = move
-CHK_DIR_EXISTS= if not exist
-MKDIR         = mkdir
-INSTALL_FILE    = copy /y
-INSTALL_PROGRAM = copy /y
-INSTALL_DIR     = xcopy /s /q /y /i
+DEL_FILE      = rm
 
 ####### Output directory
 
@@ -38,7 +25,6 @@ INSTALL_DIR     = xcopy /s /q /y /i
 SOURCES       = MOCOM.c 
 OBJECTS       = MOCOM.o
 
-TARGET         = calibration.exe
 DESTDIR_TARGET = calibration.exe
 
 
@@ -63,8 +49,8 @@ DESTDIR_TARGET = calibration.exe
 $(DESTDIR_TARGET):  $(OBJECTS) 
 	$(LINKER) $(LFLAGS) -o $(DESTDIR_TARGET) $(OBJECTS)  $(LIBS)
 
-clean: compiler_clean 
-	-$(DEL_FILE) MOCOM.o
+clean:  
+	-$(DEL_FILE) MOCOM.o $(DESTDIR_TARGET)
 
 ####### Compile
 

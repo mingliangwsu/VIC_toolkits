@@ -576,7 +576,7 @@ printf("Line check 8.\n");
 printf("Line check 9.\n");
       printf("\rRetrieving model run  (%05i): %d:%02d", state->dispatch_id, elapsed/60, elapsed%60);
       fflush(stdout);
-      sleep(5);  elapsed += 5;
+      sleep(60);  elapsed += 60;
     }
     printf("\n");
 
