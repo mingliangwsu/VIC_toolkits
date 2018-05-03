@@ -385,12 +385,16 @@ void amoeba ( AMOEBA_CONTEXT * a )
            for stored information.
 
 ***********************************************************************/
-switch(a->exec_state)  /* mwahahahaha. */
-{
-case amoebadone:  assert(0);  /* ruh-roh */
-case amoebauninitialized:
-  
-  a->FOUND  = FALSE;
+ //switch(a->exec_state)  /* mwahahahaha. */
+// {
+//  case amoebadone:  assert(0);  /* ruh-roh */
+//  case amoebauninitialized:
+//
+ if (a->exec_state == amoebadone) {
+  fprintf(stderr, "a->exec_state == amoebadone!\n");
+  assert(0);
+ } else if (a->exec_state == amoebauninitialized) {  
+   a->FOUND  = FALSE;
 
 /*  ++*a->extern_iter; */  /* FIXME what are the semantics of this thing now? */
   
@@ -404,54 +408,57 @@ case amoebauninitialized:
   for ( int j = 0; j < N_PARAM; j++ ) a->r.p[j] = (1.0+ALPHA)*a->pbar[j] - ALPHA*a->parent.p[j];
 
   a->dispatch_state = dispatch_model( a->r.p, a->r.f, &a->r.soln_num );
-  a->exec_state = amoeba1;
-case amoeba1: if (!check_model(a->dispatch_state)) return;  /* all of these should normally be returning on fall-through */
-  retrieve_model(a->dispatch_state);
-
-  if ( less_than_or_equal(a->r.f,a->test_set[0].f,N_TEST_FUNCS) ) {
-    /** Solution better than best point, so try additional extrapolation by a factor of GAMMA **/
-    for ( int j = 0; j < N_PARAM; j++ ) a->rr.p[j] = GAMMA*a->r.p[j] + (1.0-GAMMA)*a->pbar[j];
-
-    a->dispatch_state = dispatch_model( a->rr.p, a->rr.f, &a->rr.soln_num );
-    a->exec_state = amoeba2;
-case amoeba2: if (!check_model(a->dispatch_state)) return;
+  //a->exec_state = amoeba1;
+//case amoeba1: if (!check_model(a->dispatch_state)) return;  /* all of these should normally be returning on fall-through */
+  if (! check_model(a->dispatch_state)) { //good parameter
     retrieve_model(a->dispatch_state);
+    if ( less_than_or_equal(a->r.f,a->test_set[0].f,N_TEST_FUNCS) ) {
+      /** Solution better than best point, so try additional extrapolation by a factor of GAMMA **/
+      for ( int j = 0; j < N_PARAM; j++ ) a->rr.p[j] = GAMMA*a->r.p[j] + (1.0-GAMMA)*a->pbar[j];
+      a->dispatch_state = dispatch_model( a->rr.p, a->rr.f, &a->rr.soln_num );
+      //a->exec_state = amoeba2;
+      //case amoeba2: if (!check_model(a->dispatch_state)) return;
+      if (! check_model(a->dispatch_state)) { //good parameter    
+        retrieve_model(a->dispatch_state);
+        if ( less_than(a->rr.f,a->test_set[0].f,N_TEST_FUNCS) ) {
+          /* Use additional extrapolation value since better stats than previous*/
+          a->spawn = a->rr;
+          a->FOUND = TRUE;
+        }
+      } else {
+        /* Additional extrpolation not as good, use original reflection */
+        a->spawn = a->r;
+        a->FOUND = TRUE;
+      }
+  } else //if (less_than_or_equal(a->test_set[N_PARAM-1].f,a->r.f,N_TEST_FUNCS) ) {
+      if ( less_than(a->r.f,a->parent.f,N_TEST_FUNCS) ) {
+        /* Solution better than parent, possibly as good as 2nd highest point */
+        a->spawn = a->r;
+        a->FOUND = TRUE;
+      }
+  }
 
-    if ( less_than(a->rr.f,a->test_set[0].f,N_TEST_FUNCS) ) {
-      /* Use additional extrapolation value since better stats than previous*/
-      a->spawn = a->rr;
-      a->FOUND = TRUE;
-    } else {
-      /* Additional extrpolation not as good, use original reflection */
-      a->spawn = a->r;
-      a->FOUND = TRUE;
-    }
-  } else if (less_than_or_equal(a->test_set[N_PARAM-1].f,a->r.f,N_TEST_FUNCS) ) {
-    if ( less_than(a->r.f,a->parent.f,N_TEST_FUNCS) ) {
-      /* Solution better than parent, possibly as good as 2nd highest point */
-      a->spawn = a->r;
-      a->FOUND = TRUE;
-      break;    //180424LML or use else statement
-    }
-    /* reflected point larger than the 2nd largest point; look for intermediate lower point by one-dimensional contraction */
+  //bad parameter or still not found
+  if (a->FOUND == FALSE) {  
     for ( int j = 0; j < N_PARAM; j++ ) a->rr.p[j] = BETA*a->parent.p[j] + (1.0-BETA)*a->pbar[j];
-
     a->dispatch_state = dispatch_model( a->rr.p, a->rr.f, &a->rr.soln_num );
-    a->exec_state = amoeba3;
-case amoeba3: if (!check_model(a->dispatch_state)) return;
-    retrieve_model(a->dispatch_state);
+    //a->exec_state = amoeba3;
+    //case amoeba3: if (!check_model(a->dispatch_state)) return;
+    if (! check_model(a->dispatch_state)) {
+      retrieve_model(a->dispatch_state);
     
-    if ( less_than(a->rr.f,a->parent.f,N_TEST_FUNCS) ) { /* Contraction yielded smaller point? */
+      //if ( less_than(a->rr.f,a->parent.f,N_TEST_FUNCS) ) { /* Contraction yielded smaller point? */
       a->spawn = a->rr;
       a->FOUND = TRUE;
     } else {
-      a->spawn = a->parent;  /* so we can consistently compare to spawn, which will be modified, while parent is untouched in case of repopulation */
-
+      //a->spawn = a->parent;  /* so we can consistently compare to spawn, which will be modified, while parent is untouched in case of repopulation */
       //180425LML To save the time, just use the contration, then regenerate the simplex
-      a->spawn = a->rr;
+      //a->spawn = a->rr;
       a->FOUND = FALSE;
-      break;
+    }
+  }
 
+#ifdef LIUUNBLOCK
       //180425LML Note: the following block won't be execuated.
 
       /* Contraction did not yield smaller point, try contracting from all sides */
@@ -485,7 +492,9 @@ case amoeba4: if (!check_model(a->dispatch_state)) return;
   }
 
   a->exec_state = amoebadone;  /* keep in mind if this is ever threaded, this + FOUND may create a race within caller logic */
-} /* switch */
+#endif
+ } /* if */
+  a->exec_state = amoebadone;
 }
 
 
