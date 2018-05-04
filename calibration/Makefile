@@ -11,11 +11,11 @@ MAKEFILE      = Makefile.Debug
 
 CC            = gcc
 CXX           = gcc
-CFLAGS        = -g -std=c99 -Wall -Wextra $(DEFINES)
-CXXFLAGS      = -g -std=c++0x -Wall -Wextra -fexceptions $(DEFINES)
+CFLAGS        = -g -std=c99 -Wall -Wextra -fopenmp $(DEFINES)
+CXXFLAGS      = -g -std=c++0x -Wall -Wextra -fexceptions -fopenmp $(DEFINES)
 INCPATH       = -I..\calibration -I. -I..\..\sources 
 LINKER      =        gcc
-LFLAGS        =  
+LFLAGS        = -fopenmp 
 DEL_FILE      = rm
 
 ####### Output directory

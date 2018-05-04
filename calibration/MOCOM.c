@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include "MOCOM.h"
-
+#include <omp.h>
 
 /* messy, but now the interfaces are cleaner, and most of this -is- global */
 /* config */
@@ -192,16 +192,23 @@ printf("Line check 2.\n");
     /************************
     *  Main evolution loop  *
     ************************/
+    omp_lock_t writelock;
+    omp_init_lock(&writelock);
+
     do {
       FOUND_BETTER = TRUE;
-
+      #pragma omp for
       for ( int i = N_SET - N_Rmax; i < N_SET; i++ ) {
         if ( acontext[i].exec_state != amoebadone ) {
+          omp_set_lock(&writelock);
           FOUND_BETTER = FALSE;
+          omp_unset_lock(&writelock);
           amoeba(&acontext[i]);
         } else if ( !acontext[i].FOUND ) {
           /* simplex must be repopulated */
+          omp_set_lock(&writelock);
           FOUND_BETTER = FALSE;
+          omp_unset_lock(&writelock);
           populate_simplex(acontext[i].test_set, ran2seed);
           acontext[i].exec_state = amoebauninitialized;
         }
@@ -581,9 +588,13 @@ printf("Line check 8.\n");
     printf("Retrieving model run  (%05i): ", state->dispatch_id);
     fflush(stdout);
 
+    char cwd[1024];
+    getcwd(cwd, sizeof(cwd));
+    
+    printf("Trying to retrieve stat file:%s/%s",cwd,state->statsfilename);
     while((fin=fopen(state->statsfilename,"r"))==NULL) {  /* TODO:  test errno or use access() in case something else is breaking this.  low-priority */
-printf("Line check 9.\n");
-      printf("\rRetrieving model run  (%05i): %d:%02d", state->dispatch_id, elapsed/60, elapsed%60);
+      printf("Line check 9.\n");
+      printf("\rRetrieving model run  (%05i): %d:%02d\n", state->dispatch_id, elapsed/60, elapsed%60);
       fflush(stdout);
       sleep(60);  elapsed += 60;
     }
