@@ -137,7 +137,7 @@ int main(int argc,char ** argv) {
   
 printf("Line check 1.\n");
   
-  while ( (Rmax > MAX_RANK)  /* AWW added: */ &&  ((N_SET - N_Rmax) > N_PARAM) )  /* PN: Confirmed: can usually be avoided, increase N_SET */
+  while ( (Rmax > MAX_RANK)  /* AWW added: */ /*180510LML`&&  ((N_SET - N_Rmax) > N_PARAM)*/ )  /* PN: Confirmed: can usually be avoided, increase N_SET */
   {
     if(generation % PRT_GENERATION == 0) {
       /** Print current generation for external monitoring **/
@@ -197,7 +197,7 @@ printf("Line check 2.\n");
 
     do {
       FOUND_BETTER = TRUE;
-      #pragma omp for
+      //#pragma omp for
       for ( int i = N_SET - N_Rmax; i < N_SET; i++ ) {
         if ( acontext[i].exec_state != amoebadone ) {
           omp_set_lock(&writelock);
@@ -284,7 +284,7 @@ populate_simplex(ITEM * test_set, long * ran2seed)
     do {
       float tmp_prob = ran2(ran2seed);
       int k = 0;
-      while(tmp_prob>prob[k] && k<N_SET-1) k++;
+      while((tmp_prob>prob[k]) && (k < (N_SET-1))) k++;
       if ( k < (N_SET - N_Rmax) ) {
         test_set[j].pos = k;
         NEW_SET=TRUE;
