@@ -197,7 +197,7 @@ printf("Line check 2.\n");
 
     do {
       FOUND_BETTER = TRUE;
-      //#pragma omp for
+      #pragma omp parallel for
       for ( int i = N_SET - N_Rmax; i < N_SET; i++ ) {
         if ( acontext[i].exec_state != amoebadone ) {
           omp_set_lock(&writelock);
