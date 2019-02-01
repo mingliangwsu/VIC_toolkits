@@ -9,6 +9,7 @@
 #include "MOCOM.h"
 #include <omp.h>
 
+
 /* messy, but now the interfaces are cleaner, and most of this -is- global */
 /* config */
 int N_RAND, N_SET, N_PARAM, N_TEST_FUNCS;
@@ -19,7 +20,7 @@ ITEM * set;
 FILE *fopti;
 float * prob;
 int Rmax, N_Rmax, generation;
-
+const int MAX_GENERATION = 15;  //LML190131
 int main(int argc,char ** argv) {
 /**********************************************************************
   MOCOM-UA.c             Keith Cherkauer            November 18, 1999
@@ -134,10 +135,11 @@ int main(int argc,char ** argv) {
   if ( RESTART ) restart_optimization(restart_file);
   else random_start_optimization(ran2seed);
   printf("Initial set generation finished.\n\nStarting tests:\n\n"); 
-  
+#ifdef DEBUG_CHECK
 printf("Line check 1.\n");
+#endif
   
-  while ( (Rmax > MAX_RANK)  /* AWW added: */ /*180510LML`&&  ((N_SET - N_Rmax) > N_PARAM)*/ )  /* PN: Confirmed: can usually be avoided, increase N_SET */
+  while ( (Rmax > MAX_RANK) && generation <= MAX_GENERATION /* AWW added: */ /*180510LML`&&  ((N_SET - N_Rmax) > N_PARAM)*/ )  /* PN: Confirmed: can usually be avoided, increase N_SET */
   {
     if(generation % PRT_GENERATION == 0) {
       /** Print current generation for external monitoring **/
@@ -161,8 +163,9 @@ printf("Line check 1.\n");
         fprintf(fopti," )\t%i\t%i\n", set[i].rank, set[i].soln_num);
 
         /* Mark current point for saving -- NOTE: this only saves sets in PRINTED generations, but this is likely desirable behaviour */
+#ifdef DEBUG_CHECK
 printf("Line check 2.\n");
-
+#endif
         sprintf( cmdstr, "touch runs/%s/%05i/.keep", labelstr, set[i].soln_num); //180424LML added 'touch'
         system( cmdstr );
 
@@ -242,7 +245,9 @@ printf("Line check 2.\n");
   /*
    * Optimization has been completed, output final generation
    */
+#ifdef DEBUG_CHECK
 printf("Line check 3a.\n");
+#endif
   fprintf(fopti,"\nResults for multi-objective global optimization:\n");
   fprintf(fopti,"\tNeeded %i iterations to solve with a population of %i\n==========\n",generation,N_SET);
   /*header row*/
@@ -260,7 +265,9 @@ printf("Line check 3a.\n");
       fprintf(fopti,"\t%.5g",set[i].f[j]);
     fprintf(fopti," )\t%i\t%i\n", set[i].rank, set[i].soln_num);
     /* identify current set for saving */
+#ifdef DEBUG_CHECK
 printf("Line check 3b. set=%d \n",set[i].soln_num);
+#endif
     sprintf( cmdstr, "touch runs/%s/%05i/.keep", labelstr, set[i].soln_num);
     system( cmdstr );
   }
@@ -269,7 +276,9 @@ printf("Line check 3b. set=%d \n",set[i].soln_num);
   printf("Optimization required the function be evaluated %i times, through %i generations.\nDONE!\n", SOLVE_CNT, generation);
 
   return 0;
+#ifdef DEBUG_CHECK
 printf("Line check 4.\n");
+#endif
 }
 
 
@@ -301,7 +310,9 @@ populate_simplex(ITEM * test_set, long * ran2seed)
   }
 
   quick(test_set, N_PARAM);
+#ifdef DEBUG_CHECK
 printf("Line check 5.\n");
+#endif
 }
 
 
@@ -327,7 +338,9 @@ void random_start_optimization(long *ran2seed)
   for (int setcnt = 0; setcnt < N_RAND; setcnt++ ) {
     fprintf(fopti,"%i:\t",setcnt);
     retrieve_model(queue[setcnt]);
+#ifdef DEBUG_CHECK
 printf("Line check 6.\n");
+#endif
     sprintf( cmdstr, "touch runs/%s/%05i/.keep", labelstr, set[setcnt].soln_num);
     system( cmdstr );
   }
@@ -543,7 +556,9 @@ dispatch_model( const float       *p,
     state->dispatch_id = ++SOLVE_CNT; /* FIXME this is gross and is only pre-incremented so it gets the same value as is used outside of this function; it is conditionally incremented in here, so it is difficult to move the increment out of this function, but this is bad code right now */
 
     cmdstr_cur = cmdstr = malloc(4096);
+#ifdef DEBUG_CHECK
 printf("Line check 7.\n");
+#endif
     sprintf(state->statsfilename,"runs/%s/%05i/stats.txt",labelstr, state->dispatch_id);
    
 
@@ -584,7 +599,9 @@ void retrieve_model(DISPATCH_MODEL_STATE * state)
     fprintf(fopti,"-> returning INVALIDMAX statistics\n");
   } else {
     int elapsed = 0; 
+#ifdef DEBUG_CHECK
 printf("Line check 8.\n");
+#endif
     printf("Retrieving model run  (%05i): ", state->dispatch_id);
     fflush(stdout);
 
@@ -593,7 +610,9 @@ printf("Line check 8.\n");
     
     printf("Trying to retrieve stat file:%s/%s",cwd,state->statsfilename);
     while((fin=fopen(state->statsfilename,"r"))==NULL) {  /* TODO:  test errno or use access() in case something else is breaking this.  low-priority */
+#ifdef DEBUG_CHECK
       printf("Line check 9.\n");
+#endif
       printf("\rRetrieving model run  (%05i): %d:%02d\n", state->dispatch_id, elapsed/60, elapsed%60);
       fflush(stdout);
       sleep(60);  elapsed += 60;

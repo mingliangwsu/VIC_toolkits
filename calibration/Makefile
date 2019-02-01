@@ -8,7 +8,7 @@
 MAKEFILE      = Makefile.Debug
 
 ####### Compiler, tools and options
-
+DEFINES       = -DxDEBUG_CHECK
 CC            = gcc
 CXX           = gcc
 CFLAGS        = -g -std=c99 -Wall -Wextra -fopenmp $(DEFINES)
